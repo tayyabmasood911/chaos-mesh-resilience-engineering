@@ -1,0 +1,22 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: cross-az-partition-and-loss
+  namespace: chaos-testing
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - production
+    labelSelectors:
+      topology.kubernetes.io/zone: us-east-1a
+  direction: both
+  target:
+    selector:
+      namespaces:
+        - production
+      labelSelectors:
+        topology.kubernetes.io/zone: us-east-1b
+    mode: all
+  duration: '8m'

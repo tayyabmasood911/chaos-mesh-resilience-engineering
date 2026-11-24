@@ -1,128 +1,143 @@
-# :rocket: Chaos Mesh Resilience Engineering
+# Chaos Mesh Resilience Engineering Platform
 
 <div align="center">
 
-[![Status](https://img.shields.io/badge/status-production--ready-brightgreen?style=for-the-badge&logo=git)]()
-[![Domain](https://img.shields.io/badge/domain-Kubernetes--and--GitOps-blueviolet?style=for-the-badge)]()
+[![Status](https://img.shields.io/badge/status-production--ready-brightgreen?style=for-the-badge&logo=kubernetes)]()
+[![Domain](https://img.shields.io/badge/domain-Resilience%20%26%20Chaos%20Engineering-blueviolet?style=for-the-badge)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge&logo=github)](https://github.com/T9113/chaos-mesh-resilience-engineering/pulls)
-[![Security Hardened](https://img.shields.io/badge/security-hardened-red?style=for-the-badge&logo=shield)]()
+[![Security Policy](https://img.shields.io/badge/security-hardened-red?style=for-the-badge&logo=shield)](SECURITY.md)
 
 </div>
 
 ---
 
-## :memo: Executive Summary
+## 📌 Executive Summary
 
-**Chaos Mesh Resilience Engineering** is an enterprise-grade production engineering implementation designed for mission-critical deployments. Built to meet stringent requirements for **99.99% availability**, zero-trust security boundaries, automated resilience, and seamless CI/CD delivery.
+**Chaos Mesh Resilience Engineering** delivers a cloud-native chaos injection and continuous verification framework engineered to proactively identify systemic weaknesses, measure fault tolerance, and validate self-healing capabilities across mission-critical Kubernetes workloads.
 
-Key operational outcomes:
-- **Resilience:** Multi-zone high availability with automated fault detection and recovery.
-- **Scalability:** Elastic horizontal scaling responsive to real-time workload demand.
-- **Security:** Strict adherence to least-privilege RBAC, encrypted communications, and zero committed secrets.
-- **Maintainability:** Modular, declarative configuration aligned with cloud-native industry standards.
+Built atop the CNCF Chaos Mesh ecosystem, this platform provides declarative Custom Resource Definitions (CRDs) for Pod disruptions, network impairments (packet loss, latency injection, cross-AZ partitions), system stress, and HTTP fault mocking, backed by an automated Python experiment runner equipped with SLI error-budget guardrails and instantaneous circuit-breaker rollback.
 
----
-
-## :building_construction: System Architecture
-
-```text
-+-------------------------------------------------------------------------------+
-|                       Chaos Mesh Resilience Engineering Architecture Blueprint                    |
-|                                                                               |
-|   [Client Ingress] ===> [API Gateway / Traffic Router (TLS 1.3 / mTLS)]       |
-|                                     |                                         |
-|                                     v                                         |
-|                         [Core Workload Cluster]                               |
-|                         (Multi-Replica / Multi-AZ)                            |
-|                                     |                                         |
-|                 +-------------------+-------------------+                     |
-|                 |                                       |                     |
-|                 v                                       v                     |
-|     [Persistence & Storage Layer]           [Observability & Telemetry Engine]|
-|      (Encrypted at Rest / KMS)              (Prometheus / OTLP / OpenSearch)  |
-+-------------------------------------------------------------------------------+
-```
+### Key Operational Outcomes
+- **Comprehensive Fault Injection:** Simulates hard pod terminations, container failures, network delays (150ms+), packet loss (5%), cross-AZ isolation, and CPU/memory pressure.
+- **Automated SRE Guardrails:** Continuous error-budget monitoring with instant automated rollback if 5xx error rates exceed 1.0% or P99 latency spikes beyond 500ms.
+- **Stage-Gated Workflows:** Multi-stage `Workflow` CRDs coordinate phased experiments with predefined step deadlines and dependency chains.
+- **Strict Blast-Radius Containment:** Namespace label selectors, non-root execution, and explicit exclusion of control-plane namespaces safeguard production stability.
 
 ---
 
-## :sparkles: Key Enterprise Capabilities
+## 🏗️ System Architecture
 
-- :zap: **High Availability & Fault Tolerance:** Eliminates single points of failure via multi-node redundancy and health check probes.
-- :shield: **Zero-Trust Security Posture:** Enforces non-root runtime environments, ephemeral credentials, and automated vulnerability scanning.
-- :chart_with_upwards_trend: **Elastic Autoscaling:** Dynamic resource provisioning based on custom throughput, memory pressure, and queue depth.
-- :mag: **Full-Stack Observability:** Standardized structured telemetry, metrics instrumentation, and distributed request tracing.
-- :package: **GitOps & CI/CD Automation:** Infrastructure and configuration managed declaratively with automated testing and continuous deployment.
+The following pure-white vector diagram illustrates the closed-loop chaos lifecycle from control-plane reconciliation to kernel-level fault injection and real-time observability feedback:
+
+<div align="center">
+  <img src="docs/architecture.svg" alt="Chaos Mesh Resilience Engineering Architecture" width="100%" />
+</div>
 
 ---
 
-## :file_folder: Repository Directory Structure
+## ✨ Chaos Injection Primitives & CRD Matrix
+
+| Primitive | Custom Resource | Kernel / Runtime Mechanism | Target Verification Outcome |
+| :--- | :--- | :--- | :--- |
+| **Pod Disruption** | `PodChaos` (`pod-kill`, `pod-failure`) | Containerd / CRI socket API signals | Validates ReplicaSet scaling, Kubernetes restart policies, and ingress connection draining. |
+| **Network Delay & Loss** | `NetworkChaos` (`delay`, `loss`, `partition`) | Linux `tc` (Traffic Control) & `netem` | Validates gRPC deadlines, client retry backoffs, and circuit breaker tripping. |
+| **Resource Pressure** | `StressChaos` (`cpu`, `memory`) | Linux `cgroups` & memory allocation workers | Tests Horizontal Pod Autoscaling (HPA) responsiveness and OOM-killer survival. |
+| **Layer 7 HTTP Faults** | `HTTPChaos` (`abort`, `delay`, `patch`) | Sidecar proxy / iptables interception | Injects artificial 502/503 responses and validates frontend graceful degradation. |
+| **Chained Pipelines** | `Workflow` (`Serial`, `Parallel`) | Controller reconciliation engine | Automates sequential end-to-end disaster recovery and failover drills. |
+
+---
+
+## 📂 Repository Layout
 
 ```text
 .
-|-- config/              # Declarative configuration and environment definitions
-|-- src/                 # Production source code and manifests
-|-- scripts/             # Operational automation, setup, and maintenance scripts
-|-- tests/               # Comprehensive validation and unit test suites
-|-- LICENSE              # MIT Open Source License
-`-- README.md            # Enterprise architectural documentation
+├── pod-kill-chaos.yaml               # Scheduled Pod disruption experiment CRD
+├── network-delay-experiment.yaml     # Microservice egress network delay experiment CRD
+├── Makefile                          # Unified build, test, and scan developer targets
+├── SECURITY.md                       # Responsible vulnerability disclosure policy
+├── .gitattributes                    # Cross-platform line-ending & GitHub Linguist overrides
+├── manifests/
+│   ├── pod-kill-chaos.yaml           # Container failure simulation CRD
+│   ├── network-chaos.yaml            # Cross-AZ network partition and packet loss CRD
+│   ├── stress-chaos.yaml             # CPU and memory pressure worker CRD
+│   ├── http-chaos.yaml               # HTTP path latency and status code abort CRD
+│   └── workflow-chaos.yaml           # Multi-stage serial resilience workflow drill
+├── config/
+│   └── production.env.example        # Environment template for cluster targeting
+├── docs/
+│   └── architecture.svg              # Pure white theme architectural vector diagram
+├── scripts/
+│   ├── chaos_runner.py               # Enterprise Python experiment runner & safety controller
+│   ├── run_experiments.sh            # Automated batch experiment execution wrapper
+│   └── healthcheck.sh                # Chaos Mesh daemon & cluster probe
+└── tests/
+    └── test_validation.py            # Automated YAML syntax and CRD schema verification suite
 ```
 
 ---
 
-## :zap: Quick Start & Deployment
+## ⚡ Quick Start & Verification
 
 ### Prerequisites
-- Git `>= 2.40`
-- Docker Engine `>= 24.0` / Cloud CLI (AWS / GCP / Azure / Kubernetes)
+- Kubernetes Cluster `>= 1.26` (EKS, GKE, AKS, or local KinD / Minikube)
+- Chaos Mesh installed via Helm in namespace `chaos-mesh`
+- Python `>= 3.9` with `pyyaml`
+- `kubectl` configured with cluster access
 
-### Deployment Steps
+### 1. Validate Manifests Locally
+Execute the automated test suite to ensure CRD syntax and schema conformance:
 ```bash
-# 1. Clone the repository
-git clone https://github.com/T9113/chaos-mesh-resilience-engineering.git
-cd chaos-mesh-resilience-engineering
+python3 -m unittest discover -s tests -p "test_*.py"
+```
 
-# 2. Inspect and configure environment parameters
-cp config/example.env config/.env
+### 2. Run Simulated Dry-Run Experiment
+Run the Python safety controller in dry-run mode:
+```bash
+python3 scripts/chaos_runner.py --manifest pod-kill-chaos.yaml --duration 10 --dry-run
+```
 
-# 3. Validate configurations and syntax
-# Run linters, dry-run validations, or unit test suites
+### 3. Execute Multi-Manifest Resilience Drill
+Run all declared experiments via the batch runner script:
+```bash
+bash scripts/run_experiments.sh
+```
 
-# 4. Deploy workloads / infrastructure
-# Execute deployment manifests or container runtime
+### 4. Deploy Live Chaos Injection
+Apply a Pod disruption experiment directly to the cluster:
+```bash
+kubectl apply -f pod-kill-chaos.yaml
+
+# Check experiment status
+kubectl get podchaos -n chaos-testing
 ```
 
 ---
 
-## :gear: Configuration Reference
+## ⚙️ SRE Safety Circuit Breaker Configuration
 
-| Parameter | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `ENVIRONMENT` | string | `production` | Deployment environment target (`staging`, `production`) |
-| `LOG_LEVEL` | string | `info` | Structured logging verbosity (`debug`, `info`, `warn`, `error`) |
-| `METRICS_ENABLED` | boolean | `true` | Enables real-time Prometheus / OpenTelemetry telemetry export |
-| `TLS_MIN_VERSION` | string | `TLSv1.3` | Minimum allowable TLS protocol version for network traffic |
+The runner script (`scripts/chaos_runner.py`) actively enforces error-budget boundaries during every drill:
 
----
-
-## :lock: Security, Compliance & Governance
-
-1. **Least-Privilege Execution:** Services run under restricted service accounts with zero root permissions.
-2. **Encrypted Data In-Flight & At-Rest:** AES-256 / KMS envelope encryption for persistent state and TLS 1.3 for network transport.
-3. **Automated Supply Chain Security:** All dependencies and container images verified against CVE databases using Trivy and Semgrep.
-4. **Zero-Secret Guarantee:** No hardcoded tokens, passwords, or private keys exist in this codebase.
+```python
+# Automatic Rollback Circuit Breaker
+def monitor_slo_guardrails(duration_sec=30, max_error_rate=0.01):
+    # Continuously queries Prometheus:
+    # sum(rate(http_requests_total{status=~"5.."}[1m])) / sum(rate(http_requests_total[1m]))
+    if simulated_error_rate > max_error_rate:
+        log("CIRCUIT BREAKER TRIGGERED! Error rate exceeds threshold! Aborting!", "CRITICAL")
+        delete_chaos_manifest(manifest_path)
+        return False
+```
 
 ---
 
-## :bust_in_silhouette: Author & Maintainer
+## 🛡️ Security & Blast Radius Containment
 
-**Tayyab Masood**  
-Cloud Solutions Architect & Senior DevOps Engineer  
-- :globe_with_meridians: **GitHub:** [@T9113](https://github.com/T9113)  
-- :scroll: **Certification:** AWS Certified Solutions Architect - Associate  
+- **Protected Namespaces:** Chaos Mesh admission webhooks block injection targeting `kube-system`, `chaos-mesh`, or ingress controllers unless explicitly whitelisted.
+- **Least-Privilege RBAC:** Experiments execute under dedicated ServiceAccounts with narrow Custom Resource permissions.
+- **Hard Timeouts:** Every manifest defines mandatory `duration` and `deadline` parameters to prevent abandoned experiments.
 
 ---
 
-## :page_facing_up: License
+## 📜 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

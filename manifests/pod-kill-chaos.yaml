@@ -1,0 +1,17 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: container-failure-simulation
+  namespace: chaos-testing
+spec:
+  action: container-kill
+  mode: fixed
+  value: '1'
+  containerNames:
+    - order-processor
+  selector:
+    namespaces:
+      - production
+    labelSelectors:
+      app: order-service
+  duration: '5m'

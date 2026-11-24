@@ -1,0 +1,23 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: worker-cpu-memory-stress
+  namespace: chaos-testing
+spec:
+  mode: fixed
+  value: '2'
+  selector:
+    namespaces:
+      - production
+    labelSelectors:
+      app: async-worker
+  stressors:
+    cpu:
+      workers: 4
+      load: 85
+      options: ['-c', '0']
+    memory:
+      workers: 2
+      size: '1Gi'
+      options: ['--vm-keep']
+  duration: '10m'

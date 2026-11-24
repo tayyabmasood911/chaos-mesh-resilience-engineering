@@ -1,0 +1,44 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Workflow
+metadata:
+  name: full-stack-resilience-drill
+  namespace: chaos-testing
+spec:
+  entry: the-entry
+  templates:
+    - name: the-entry
+      templateType: Serial
+      children:
+        - network-delay-step
+        - pod-kill-step
+        - cpu-stress-step
+    - name: network-delay-step
+      templateType: NetworkChaos
+      deadline: 3m
+      networkChaos:
+        action: delay
+        mode: one
+        selector:
+          namespaces: [production]
+          labelSelectors: { app: api-gateway }
+        delay:
+          latency: '200ms'
+    - name: pod-kill-step
+      templateType: PodChaos
+      deadline: 3m
+      podChaos:
+        action: pod-kill
+        mode: one
+        selector:
+          namespaces: [production]
+          labelSelectors: { app: order-service }
+    - name: cpu-stress-step
+      templateType: StressChaos
+      deadline: 3m
+      stressChaos:
+        mode: one
+        selector:
+          namespaces: [production]
+          labelSelectors: { app: async-worker }
+        stressors:
+          cpu: { workers: 2, load: 80 }

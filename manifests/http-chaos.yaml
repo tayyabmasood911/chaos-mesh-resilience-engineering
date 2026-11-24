@@ -1,0 +1,20 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: payment-gateway-latency-abort
+  namespace: chaos-testing
+spec:
+  mode: fixed
+  value: '1'
+  selector:
+    namespaces:
+      - production
+    labelSelectors:
+      app: checkout-service
+  target: Request
+  port: 8080
+  path: '/v1/charge*'
+  method: POST
+  delay: '2000ms'
+  abort: false
+  duration: '5m'
